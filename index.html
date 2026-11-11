@@ -30,7 +30,7 @@
  <nav><a href="#map">الخريطة</a><a href="#game">اللعبة</a><a href="#quiz">الاختبار</a><a href="#achievements">إنجازاتي</a><a href="#booths">البوثات</a><button id="admin-open" class="outline-btn">لوحة التحكم</button></nav>
 </header>
 <main>
-<section class="hero"><div class="hero-copy"><span class="eyebrow">مرحبًا بك في فعاليتنا</span><h1>معًا نحو استخدام<br><em>واعٍ للمضادات الحيوية</em></h1><p>اكتشف أركان الفعالية، وتعرّف على موضوع كل بوث، واعرف مكانه بسهولة من خلال الخريطة التفاعلية.</p><a class="primary-btn" href="#map">استكشف خريطة الفعالية <span>←</span></a></div>
+<section class="hero"><div class="hero-copy"><span class="eyebrow">مرحبًا بك في فعاليتنا</span><h1>جرعة <em>بوعي</em></h1><p>اكتشف أركان الفعالية، وتعرّف على موضوع كل بوث، واعرف مكانه بسهولة من خلال الخريطة التفاعلية.</p><a class="primary-btn" href="#map">استكشف خريطة الفعالية <span>←</span></a></div>
 <div class="hero-art" aria-hidden="true"><div class="orb o1"></div><div class="orb o2"></div><div class="capsule"></div><b>+</b></div></section>
 <section class="section" id="map"><div class="heading"><div><span class="eyebrow">دليلك داخل الفعالية</span><h2>خريطة البوثات</h2></div><span class="count" id="booth-count">٥ بوثات</span></div><p class="intro">اضغط على علامة أي بوث لمعرفة تفاصيله وموقعه.</p>
 <div class="map-layout"><div class="map-card"><div class="map-toolbar"><b>مخطط موقع الفعالية</b><span>● اضغط على العلامات</span></div><div class="map-canvas" id="map-canvas"><img id="floorplan" src="assets/floor-plan-placeholder.svg" alt="مخطط موقع الفعالية"><div id="map-pins"></div><div id="map-empty" class="map-empty">سيظهر هنا مخطط موقع الفعالية بعد رفع صورته من لوحة التحكم</div></div><div class="map-legend"><span>● موقع بوث</span><span>الخريطة التفاعلية</span></div></div>
@@ -65,30 +65,71 @@
  <p class="quiz-disclaimer">المحتوى للتوعية العامة، ولا يغني عن استشارة الطبيب أو الصيدلي.</p>
 </section>
 
+
 <section class="section achievements-section" id="achievements">
- <div class="heading"><div><span class="eyebrow">كل خطوة تستحق التقدير</span><h2>إنجازاتي وشاراتي</h2></div><span class="count">نظام الإنجازات</span></div>
- <p class="intro">سجّل اسمك الثلاثي مرة واحدة، وسيُعتمد تلقائيًا في جميع أنشطة الفعالية. تُفتح الشارات تلقائيًا عند تحقيق شروطها في الألعاب والاختبارات.</p>
- <div class="achievement-panel">
-  <div class="profile-card">
-   <div class="profile-heading"><span class="profile-avatar">♙</span><div><b>ملف المشارك</b><small>اسم واحد لجميع أنشطتك</small></div></div>
+    <div class="heading">
+        <div>
+            <span class="eyebrow">كل خطوة تستحق التقدير</span>
+            <h2>إنجازاتي وشاراتي</h2>
+        </div>
+        <span class="count">نظام الإنجازات</span>
+    </div>
+
+    <p class="intro">
+        سجّل اسمك الثلاثي مرة واحدة، وسيُعتمد تلقائيًا في جميع أنشطة الفعالية.
+        تُفتح الشارات تلقائيًا عند تحقيق شروطها في الألعاب والاختبارات.
+    </p>
+
+    <div class="achievement-panel">
+        <div class="profile-card">
+
 <label for="profile-name">اسمك في الفعالية</label>
+
 <div class="profile-entry">
-    <input id="profile-name"
-           maxlength="80"
-           autocomplete="name"
-           placeholder="سيظهر اسمك المعتمد هنا"
-           disabled>
+    <input
+        id="profile-name"
+        maxlength="80"
+        autocomplete="name"
+        placeholder="سيظهر اسمك المعتمد هنا"
+        readonly
+    >
 </div>
-   <p id="profile-status" class="hint" role="status">يُحفظ الاسم على هذا الجهاز لتسهيل تسجيل نتائجك.</p>
-   <div class="profile-stats">
-    <div><b id="stat-total">٠</b><span>إجمالي النقاط</span></div>
-    <div><b id="stat-games">٠</b><span>مرات اللعب</span></div>
-    <div><b id="stat-quizzes">٠</b><span>الاختبارات</span></div>
-   </div>
-  </div>
-  <div class="badges-panel"><div class="badges-heading"><b>مجموعة الشارات</b><span>تُعرض المكتسبة والمقفلة</span></div><div id="achievement-grid" class="achievement-grid"><p class="leader-empty">سيظهر ملف إنجازاتك بعد اعتماد اسمك الثلاثي.</p></div></div>
- </div>
+
+<p id="profile-status" class="hint" role="status">
+    يُحفظ الاسم على هذا الجهاز لتسهيل تسجيل نتائجك.
+</p>
+
+            <div class="profile-stats">
+                <div>
+                    <b id="stat-total">٠</b>
+                    <span>إجمالي النقاط</span>
+                </div>
+                <div>
+                    <b id="stat-games">٠</b>
+                    <span>مرات اللعب</span>
+                </div>
+                <div>
+                    <b id="stat-quizzes">٠</b>
+                    <span>الاختبارات</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="badges-panel">
+            <div class="badges-heading">
+                <b>مجموعة الشارات</b>
+                <span>تُعرض المكتسبة والمقفلة</span>
+            </div>
+
+            <div id="achievement-grid" class="achievement-grid">
+                <p class="leader-empty">
+                    سيظهر ملف إنجازاتك بعد اعتماد اسمك الثلاثي.
+                </p>
+            </div>
+        </div>
+    </div>
 </section>
+
 
 <section class="section" id="booths"><div class="heading"><div><span class="eyebrow">تعرّف على الأركان</span><h2>جميع البوثات</h2></div></div><label class="search"><span>⌕</span><input id="search" placeholder="ابحث عن بوث أو موضوع..."></label><div class="booth-grid" id="booth-list"></div><p id="no-results" class="hidden">ما لقينا بوث بهذا الاسم.</p></section>
 <section class="closing"><span>✳</span><div><h2>معرفة اليوم، حماية للغد</h2><p>استخدم المضادات الحيوية بمسؤولية، وبحسب إرشادات المختصين.</p></div></section>

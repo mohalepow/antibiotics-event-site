@@ -578,28 +578,117 @@ start();
   {q:"ماذا تفعل بالمضاد الحيوي المتبقي من وصفة سابقة؟",a:["تحتفظ به للمرض القادم","تعطيه لشخص لديه أعراض مشابهة","تضاعف الجرعة عند الحاجة","لا تستخدمه لاحقًا أو تشاركه، واسأل الصيدلي عن التخلص الآمن منه"],why:"لا تستخدم بقايا المضادات لمرض آخر ولا تشاركها؛ فقد لا تكون مناسبة وقد تؤخر العلاج الصحيح."},
   {q:"إذا وصف لك الطبيب مضادًا حيويًا، فما التصرف الصحيح؟",a:["توقف عنه أو تغيّر الجرعة بمجرد التحسن","تلتزم بالجرعة والتعليمات الموصوفة وتستشير المختص عند وجود مشكلة","تشارك الدواء مع أحد أفراد الأسرة","تضاعف الجرعة إذا نسيت جرعة"],why:"استخدم المضاد تمامًا وفق تعليمات الطبيب أو الصيدلي، ولا تغيّر العلاج بنفسك."}
  ];
- let savedPlayerName="";
- try{savedPlayerName=localStorage.getItem(PLAYER_NAME_KEY)||"";}catch(e){/* Storage may be disabled. */}
- const normalizeName=value=>String(value||"").trim().replace(/\s+/g," ");
- const isFullName=value=>normalizeName(value).split(" ").filter(Boolean).length>=3;
- const getPlayerName=()=>normalizeName(savedPlayerName);
- function rememberPlayerName(name){
-   savedPlayerName=normalizeName(name);
-   ["profile-name","player-name","booth-checkin-player"].forEach(id=>{if($(id))$(id).value=savedPlayerName;});
-   try{localStorage.setItem(PLAYER_NAME_KEY,savedPlayerName);}catch(e){/* Name remains available for this page session. */}
- }
- function showIdentityGate(){
-   if(!isFullName(savedPlayerName)){$("identity-modal")?.classList.remove("hidden");document.body.classList.add("identity-lock");setTimeout(()=>$("identity-name")?.focus(),100);}
-   else{rememberPlayerName(savedPlayerName);$("identity-modal")?.classList.add("hidden");document.body.classList.remove("identity-lock");}
- }
- $("identity-save")?.addEventListener("click",async()=>{
-   const name=normalizeName($("identity-name").value);
-   if(!isFullName(name)){$("identity-status").textContent="فضلاً أدخل الاسم الثلاثي على الأقل (ثلاثة مقاطع).";$("identity-name").focus();return;}
-   rememberPlayerName(name);$("identity-status").textContent="تم اعتماد اسمك بنجاح.";showIdentityGate();await loadPlayerDashboard();if(pendingQrBooth){$("booth-checkin-player").value=name;$("booth-checkin-modal")?.classList.remove("hidden");}
- });
- $("identity-name")?.addEventListener("keydown",e=>{if(e.key==="Enter")$("identity-save")?.click();});
- if(savedPlayerName&&!isFullName(savedPlayerName))savedPlayerName="";
- showIdentityGate();
+let savedPlayerName = "";
+
+try {
+    savedPlayerName =
+        localStorage.getItem(PLAYER_NAME_KEY) ||
+        localStorage.getItem("profile-name-locked") ||
+        "";
+} catch (e) {
+    // Storage may be disabled.
+}
+
+const normalizeName = value =>
+    String(value || "").trim().replace(/\s+/g, " ");
+
+const isFullName = value =>
+    normalizeName(value).split(" ").filter(Boolean).length >= 3;
+
+const getPlayerName = () => normalizeName(savedPlayerName);
+
+
+function rememberPlayerName(name) {
+    savedPlayerName = normalizeName(name);
+
+    [
+        "profile-name",
+        "player-name",
+        "booth-checkin-player"
+    ].forEach(id => {
+        const field = $(id);
+
+        if (field) {
+            field.value = savedPlayerName;
+            field.readOnly = true;
+        }
+    });
+
+    try {
+        localStorage.setItem(PLAYER_NAME_KEY, savedPlayerName);
+        localStorage.setItem("profile-name-locked", savedPlayerName);
+    } catch (e) {
+        // Name remains available for this page session.
+    }
+}
+
+
+function showIdentityGate() {
+    const modal = $("identity-modal");
+
+    if (!isFullName(savedPlayerName)) {
+        modal?.classList.remove("hidden");
+        document.body.classList.add("identity-lock");
+
+        setTimeout(() => $("identity-name")?.focus(), 100);
+    } else {
+        rememberPlayerName(savedPlayerName);
+
+        modal?.classList.add("hidden");
+        document.body.classList.remove("identity-lock");
+    }
+}
+
+
+// اعتماد الاسم من نافذة الترحيب
+$("identity-save")?.addEventListener("click", async () => {
+
+    // منع تغيير الاسم بعد اعتماده
+    if (isFullName(savedPlayerName)) {
+        showIdentityGate();
+        return;
+    }
+
+    const name = normalizeName($("identity-name").value);
+
+    if (!isFullName(name)) {
+        $("identity-status").textContent =
+            "فضلاً أدخل الاسم الثلاثي على الأقل (ثلاثة مقاطع).";
+
+        $("identity-name").focus();
+        return;
+    }
+
+    rememberPlayerName(name);
+
+    $("identity-status").textContent = "تم اعتماد اسمك بنجاح.";
+
+    showIdentityGate();
+
+    await loadPlayerDashboard();
+
+    if (pendingQrBooth) {
+        $("booth-checkin-player").value = name;
+        $("booth-checkin-modal")?.classList.remove("hidden");
+    }
+});
+
+
+// اعتماد الاسم عند الضغط على Enter
+$("identity-name")?.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+        $("identity-save")?.click();
+    }
+});
+
+
+// التحقق من الاسم المحفوظ
+if (savedPlayerName && !isFullName(savedPlayerName)) {
+    savedPlayerName = "";
+}
+
+// تشغيل نافذة التسجيل عند أول زيارة
+showIdentityGate();
  function renderQuiz(){
    const root=$("quiz-questions");if(!root)return;root.innerHTML="";
    QUIZ.forEach((question,index)=>{
