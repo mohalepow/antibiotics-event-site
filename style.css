@@ -260,6 +260,13 @@ footer{background:#03252F;border-top:1px solid #0C6C78;color:#B5CAC7}
   font-weight:700;
   font-display:swap;
 }
+.brand-logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    border-radius: 12px;
+    display: block;
+}
 @font-face{
   font-family:"Amiri";
   src:url("assets/fonts/Amiri-Regular.woff2") format("woff2");
