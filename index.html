@@ -47,7 +47,7 @@
     <div class="game-overlay" id="game-overlay"><div class="game-start-box"><span class="game-pill">✚</span><h3 id="game-message-title">مستعد للرحلة؟</h3><p id="game-message">اضغط ابدأ، ثم المس الشاشة أو اضغط مسافة لتحريك الكبسولة للأعلى.</p><button class="primary" id="game-start">ابدأ اللعب</button></div></div>
    </div>
    <div class="game-controls"><span id="game-difficulty-note">تزداد الصعوبة كل ١٠ نقاط</span><div class="game-control-actions"><button id="game-sound" class="sound-btn" type="button" aria-pressed="true">🔊 الصوت يعمل</button><button id="game-flap" class="secondary">ارفع الكبسولة ↑</button></div></div>
-   <div id="game-submit" class="game-submit hidden"><b>سجّل نقاطك في لوحة المتصدرين</b><div class="score-entry"><input id="player-name" maxlength="18" placeholder="اكتب اسمك"><button id="submit-score" class="primary">إضافة نتيجتي</button></div><p id="score-status" class="hint"></p></div>
+   <div id="game-submit" class="game-submit hidden"><b>سجّل نقاطك في لوحة المتصدرين</b><div class="score-entry"><input id="player-name" maxlength="80" placeholder="اسم المشارك المعتمد" readonly><button id="submit-score" class="primary">إضافة نتيجتي</button></div><p id="score-status" class="hint"></p></div>
   </div>
   <aside class="leader-card"><div class="leader-title"><span>🏆</span><div><h3>لوحة المتصدرين</h3><p>ترتيب موحّد للألعاب والاختبارات</p></div></div><div id="leaderboard"><p class="leader-empty">تظهر أسماء المشاركين هنا بعد تسجيل نتائجهم.</p></div><p class="leader-note">المجموع يجمع نقاط لعبة رحلة المضاد الحيوي والاختبار المعرفي، وتُضاف نقاط كل محاولة إلى رصيد المشارك.</p></aside>
  </div>
@@ -67,12 +67,12 @@
 
 <section class="section achievements-section" id="achievements">
  <div class="heading"><div><span class="eyebrow">كل خطوة تستحق التقدير</span><h2>إنجازاتي وشاراتي</h2></div><span class="count">نظام الإنجازات</span></div>
- <p class="intro">احفظ اسمك لمتابعة نقاطك وأوسمتك. تُفتح الشارات تلقائيًا عند تحقيق شروطها في الألعاب والاختبارات.</p>
+ <p class="intro">سجّل اسمك الثلاثي مرة واحدة، وسيُعتمد تلقائيًا في جميع أنشطة الفعالية. تُفتح الشارات تلقائيًا عند تحقيق شروطها في الألعاب والاختبارات.</p>
  <div class="achievement-panel">
   <div class="profile-card">
    <div class="profile-heading"><span class="profile-avatar">♙</span><div><b>ملف المشارك</b><small>اسم واحد لجميع أنشطتك</small></div></div>
    <label for="profile-name">اسمك في الفعالية</label>
-   <div class="profile-entry"><input id="profile-name" maxlength="18" autocomplete="nickname" placeholder="اكتب اسمك (من حرفين إلى ١٨)"><button id="save-profile" class="primary">حفظ الاسم</button></div>
+   <div class="profile-entry"><input id="profile-name" maxlength="80" autocomplete="name" placeholder="سيظهر اسمك المعتمد هنا" readonly></div>
    <p id="profile-status" class="hint" role="status">يُحفظ الاسم على هذا الجهاز لتسهيل تسجيل نتائجك.</p>
    <div class="profile-stats">
     <div><b id="stat-total">٠</b><span>إجمالي النقاط</span></div>
@@ -80,7 +80,7 @@
     <div><b id="stat-quizzes">٠</b><span>الاختبارات</span></div>
    </div>
   </div>
-  <div class="badges-panel"><div class="badges-heading"><b>مجموعة الشارات</b><span>تُعرض المكتسبة والمقفلة</span></div><div id="achievement-grid" class="achievement-grid"><p class="leader-empty">احفظ اسمك لعرض إنجازاتك.</p></div></div>
+  <div class="badges-panel"><div class="badges-heading"><b>مجموعة الشارات</b><span>تُعرض المكتسبة والمقفلة</span></div><div id="achievement-grid" class="achievement-grid"><p class="leader-empty">سيظهر ملف إنجازاتك بعد اعتماد اسمك الثلاثي.</p></div></div>
  </div>
 </section>
 
@@ -148,13 +148,18 @@
   <div class="checkin-mark">✓</div>
   <h3 id="booth-checkin-name" class="checkin-booth-name"></h3>
   <p class="muted">أدخل الاسم نفسه الذي تستخدمه في ملف إنجازاتك حتى تُضاف الزيارة إلى شاراتك.</p>
-  <label for="booth-checkin-player">اسمك في الفعالية<input id="booth-checkin-player" maxlength="18" autocomplete="nickname" placeholder="اكتب اسمك"></label>
+  <label for="booth-checkin-player">اسمك في الفعالية<input id="booth-checkin-player" maxlength="80" autocomplete="name" placeholder="اسم المشارك المعتمد" readonly></label>
   <button id="booth-checkin-submit" class="primary full" type="button">تأكيد زيارتي</button>
   <p id="booth-checkin-status" class="hint" role="status"></p>
  </div>
 </div>
 
-<div id="toast" class="toast" role="status"></div>
+<div id="identity-modal" class="identity-modal hidden" role="dialog" aria-modal="true" aria-labelledby="identity-title">
+ <div class="identity-card"><span class="identity-mark">✦</span><span class="identity-kicker">ملفك في الفعالية</span><h2 id="identity-title">مرحبًا بك في رحلتك</h2>
+ <p>قبل أن تبدأ، أدخل اسمك الثلاثي. سنعتمده تلقائيًا في تسجيل الزيارات واللعبة والاختبار والإنجازات.</p>
+ <label for="identity-name">الاسم الثلاثي</label><input id="identity-name" type="text" maxlength="80" autocomplete="name" placeholder="مثال: محمد أحمد عبدالله">
+ <small>يُحفظ الاسم على هذا الجهاز لتسهيل مشاركتك في جميع الأنشطة.</small><button id="identity-save" class="primary full" type="button">اعتماد الاسم والمتابعة</button><p id="identity-status" class="identity-status" role="status"></p></div>
+</div><div id="toast" class="toast" role="status"></div>
 <script>
 (()=>{
  const screen=document.getElementById('intro-screen');

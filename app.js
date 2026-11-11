@@ -33,6 +33,7 @@ async function loadData() {
     supabaseClient.from("site_settings").select("value").eq("key","map_url").maybeSingle()
   ]);
   if (boothError) { console.error(boothError); toast("تعذر تحميل البوثات. راجع إعداد قاعدة البيانات."); }
+  if (settingError) console.warn("Map setting could not be loaded:", settingError);
   booths = boothData || [];
   setMap(settingData?.value || null);
   renderAll();
@@ -267,7 +268,7 @@ function renderAdminBooths(){
     const qr=document.createElement("button");qr.className="small-btn";qr.textContent="QR";qr.type="button";qr.onclick=()=>openBoothQr(b);
     const edit=document.createElement("button");edit.className="small-btn";edit.textContent="تعديل";edit.onclick=()=>openEditor(b);
     const del=document.createElement("button");del.className="small-btn danger";del.textContent="حذف";del.onclick=()=>deleteBooth(b.id);
-    actions.append(qr,edit,del);row.append(name,actions);
+    actions.append(qr,edit,del);row.append(name,actions);root.append(row);
   });
 }
 function getBoothVisitUrl(boothId){
@@ -579,15 +580,26 @@ start();
  ];
  let savedPlayerName="";
  try{savedPlayerName=localStorage.getItem(PLAYER_NAME_KEY)||"";}catch(e){/* Storage may be disabled. */}
- if($("profile-name"))$("profile-name").value=savedPlayerName;
- if($("player-name"))$("player-name").value=savedPlayerName;
- const getPlayerName=()=>($("profile-name")?.value||savedPlayerName||$("player-name")?.value||"").trim();
+ const normalizeName=value=>String(value||"").trim().replace(/\s+/g," ");
+ const isFullName=value=>normalizeName(value).split(" ").filter(Boolean).length>=3;
+ const getPlayerName=()=>normalizeName(savedPlayerName);
  function rememberPlayerName(name){
-   savedPlayerName=name;
-   if($("profile-name"))$("profile-name").value=name;
-   if($("player-name"))$("player-name").value=name;
-   try{localStorage.setItem(PLAYER_NAME_KEY,name);}catch(e){/* Name remains available for this page session. */}
+   savedPlayerName=normalizeName(name);
+   ["profile-name","player-name","booth-checkin-player"].forEach(id=>{if($(id))$(id).value=savedPlayerName;});
+   try{localStorage.setItem(PLAYER_NAME_KEY,savedPlayerName);}catch(e){/* Name remains available for this page session. */}
  }
+ function showIdentityGate(){
+   if(!isFullName(savedPlayerName)){$("identity-modal")?.classList.remove("hidden");document.body.classList.add("identity-lock");setTimeout(()=>$("identity-name")?.focus(),100);}
+   else{rememberPlayerName(savedPlayerName);$("identity-modal")?.classList.add("hidden");document.body.classList.remove("identity-lock");}
+ }
+ $("identity-save")?.addEventListener("click",async()=>{
+   const name=normalizeName($("identity-name").value);
+   if(!isFullName(name)){$("identity-status").textContent="فضلاً أدخل الاسم الثلاثي على الأقل (ثلاثة مقاطع).";$("identity-name").focus();return;}
+   rememberPlayerName(name);$("identity-status").textContent="تم اعتماد اسمك بنجاح.";showIdentityGate();await loadPlayerDashboard();if(pendingQrBooth){$("booth-checkin-player").value=name;$("booth-checkin-modal")?.classList.remove("hidden");}
+ });
+ $("identity-name")?.addEventListener("keydown",e=>{if(e.key==="Enter")$("identity-save")?.click();});
+ if(savedPlayerName&&!isFullName(savedPlayerName))savedPlayerName="";
+ showIdentityGate();
  function renderQuiz(){
    const root=$("quiz-questions");if(!root)return;root.innerHTML="";
    QUIZ.forEach((question,index)=>{
@@ -606,7 +618,7 @@ start();
  async function loadPlayerDashboard(){
    const root=$("achievement-grid");if(!root)return;
    const name=getPlayerName();
-   if(!name){root.innerHTML='<p class="leader-empty">احفظ اسمك لعرض إنجازاتك ومتابعة مجموع نقاطك.</p>';$("stat-total").textContent=ar(0);$("stat-games").textContent=ar(0);$("stat-quizzes").textContent=ar(0);return;}
+   if(!name){root.innerHTML='<p class="leader-empty">اعتمد اسمك الثلاثي لعرض إنجازاتك ومتابعة مجموع نقاطك.</p>';$("stat-total").textContent=ar(0);$("stat-games").textContent=ar(0);$("stat-quizzes").textContent=ar(0);return;}
    if(!supabaseClient){root.innerHTML='<p class="leader-empty">اربط Supabase ثم نفّذ ملف تحديث قاعدة البيانات لتفعيل حفظ الإنجازات.</p>';return;}
    const key=name.toLocaleLowerCase();
    const [statsResult,badgesResult,boothVisitsResult]=await Promise.all([
@@ -652,7 +664,8 @@ start();
    if(!booth){$("booth-checkin-status").textContent="تعذر العثور على هذا البوث. تأكد من أن رمز QR ما زال صالحًا.";return;}
    pendingQrBooth=booth;
    $("booth-checkin-name").textContent=booth.name;
-   $("booth-checkin-player").value=getPlayerName()||savedPlayerName;
+   if(!isFullName(getPlayerName())){showIdentityGate();return;}
+   $("booth-checkin-player").value=getPlayerName();
    $("booth-checkin-status").textContent="";
    $("booth-checkin-modal").classList.remove("hidden");
  }
@@ -661,8 +674,8 @@ start();
  $("booth-checkin-modal")?.addEventListener("click",e=>{if(e.target===$("booth-checkin-modal"))$("booth-checkin-modal").classList.add("hidden");});
  $("booth-checkin-submit")?.addEventListener("click",async()=>{
    if(!pendingQrBooth)return;
-   const name=$("booth-checkin-player").value.trim();
-   if(name.length<2||name.length>18){$("booth-checkin-status").textContent="اكتب اسمًا من حرفين إلى ١٨ حرفًا.";return;}
+   const name=getPlayerName();
+   if(!isFullName(name)){showIdentityGate();$("booth-checkin-status").textContent="اعتمد اسمك الثلاثي أولًا.";return;}
    const button=$("booth-checkin-submit");button.disabled=true;$("booth-checkin-status").textContent="جارٍ تسجيل زيارتك...";
    const {data,error}=await supabaseClient.rpc("record_booth_visit",{p_booth_id:String(pendingQrBooth.id),p_player_name:name});
    button.disabled=false;
@@ -672,16 +685,11 @@ start();
    $("booth-checkin-submit").textContent=data?.already_visited?"تم تسجيل الزيارة":"تمت الزيارة ✓";
    await loadPlayerDashboard();
  });
- $("save-profile")?.addEventListener("click",async()=>{
-   const name=$("profile-name").value.trim();
-   if(name.length<2||name.length>18){$("profile-status").textContent="اكتب اسمًا من حرفين إلى ١٨ حرفًا.";return;}
-   rememberPlayerName(name);$("profile-status").textContent="تم حفظ اسمك على هذا الجهاز. استخدم الاسم نفسه في جميع الأنشطة.";
-   await loadPlayerDashboard();
- });
+ $("save-profile")?.addEventListener("click",()=>showIdentityGate());
  renderQuiz();
  $("quiz-submit")?.addEventListener("click",async()=>{
    const name=getPlayerName();
-   if(name.length<2||name.length>18){$("quiz-status").textContent="احفظ اسمك في قسم إنجازاتي أولًا.";$("profile-name")?.focus();return;}
+   if(!isFullName(name)){showIdentityGate();$("quiz-status").textContent="اعتمد اسمك الثلاثي أولًا.";return;}
    const answers=QUIZ.map((q,index)=>{const selected=document.querySelector(`input[name="quiz-answer-${index}"]:checked`);return selected?Number(selected.value):null;});
    if(answers.some(answer=>answer===null)){$("quiz-status").textContent="أجب عن الأسئلة الخمسة قبل اعتماد إجاباتك.";return;}
    if(!supabaseClient){$("quiz-status").textContent="اربط الموقع بـ Supabase لتسجيل نقاط الاختبار.";return;}
@@ -732,8 +740,8 @@ start();
  $("submit-score").addEventListener("click",async()=>{
    if(!supabaseClient){$("score-status").textContent="لوحة المتصدرين تحتاج ربط Supabase أولًا.";return;}
    if(score<1){$("score-status").textContent="حاول تجمع نقطة واحدة على الأقل قبل التسجيل.";return;}
-   const name=($("player-name").value||getPlayerName()).trim();
-   if(name.length<2||name.length>18){$("score-status").textContent="اكتب اسمًا من حرفين إلى ١٨ حرفًا، أو احفظه في قسم إنجازاتي.";$("profile-name")?.focus();return;}
+   const name=getPlayerName();
+   if(!isFullName(name)){$("score-status").textContent="اعتمد اسمك الثلاثي أولًا.";showIdentityGate();return;}
    if(!ended){$("score-status").textContent="يمكن تسجيل النتيجة بعد انتهاء الجولة فقط.";return;}
    if(scoreSubmitted){$("score-status").textContent="تم تسجيل نتيجة هذه الجولة مسبقًا. ابدأ جولة جديدة لتسجيل نتيجة أخرى.";return;}
    if(!currentRunId){$("score-status").textContent="تعذر التحقق من الجولة. ابدأ جولة جديدة.";return;}
