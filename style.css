@@ -260,13 +260,6 @@ footer{background:#03252F;border-top:1px solid #0C6C78;color:#B5CAC7}
   font-weight:700;
   font-display:swap;
 }
-.brand-logo {
-    width: 48px;
-    height: 48px;
-    object-fit: contain;
-    border-radius: 12px;
-    display: block;
-}
 @font-face{
   font-family:"Amiri";
   src:url("assets/fonts/Amiri-Regular.woff2") format("woff2");
@@ -319,3 +312,58 @@ h1,h2,h3,.eyebrow,.brand b,.count,.game-start-box h3,.leader-title h3,.dashboard
   .game-hud b{font-size:12px}
   .game-hud .game-level-pill{padding:4px 7px}
 }
+
+/* Brand logo image */
+.brand-logo{width:46px;height:46px;object-fit:contain;display:block;flex:none;border-radius:10px;background:#fff}
+.brand-mark{display:none!important}
+/* Live booth placement preview in the admin editor */
+.booth-live-preview{height:260px;position:relative;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:#edf3f8;touch-action:none;cursor:crosshair;margin:12px 0}
+.booth-live-preview>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none}
+.booth-preview-marker{position:absolute;left:50%;top:50%;width:36px;height:36px;transform:translate(-50%,-50%);display:grid;place-items:center;border:3px solid #fff;border-radius:50% 50% 50% 8px;rotate:-45deg;background:#173b66;color:#fff;box-shadow:0 3px 12px #102f5366;font-size:18px;z-index:2;cursor:grab;touch-action:none}
+.booth-preview-marker:active{cursor:grabbing}
+.preview-hint{position:absolute;bottom:8px;right:8px;padding:5px 9px;border-radius:7px;background:#fffE;color:var(--blue);font-size:10px;pointer-events:none}
+@media(max-width:600px){.booth-live-preview{height:210px}.brand-logo{width:40px;height:40px}}
+
+/* Animated welcome intro */
+body.intro-lock{overflow:hidden}
+.intro-screen{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at 50% 42%,#08424D 0%,#03252F 58%,#01191f 100%);color:#F5EDE2;opacity:1;visibility:visible;transition:opacity .7s ease,visibility .7s ease}
+.intro-screen:before{content:"";position:absolute;inset:18px;border:1px solid #B78F4938;border-radius:22px;pointer-events:none}
+.intro-content{position:relative;z-index:1;width:min(90%,620px);display:flex;flex-direction:column;align-items:center;text-align:center}
+.intro-logo{width:76px;height:76px;object-fit:contain;border-radius:18px;background:#fff;padding:5px;box-shadow:0 12px 38px #0005;animation:intro-logo-in .8s cubic-bezier(.2,.8,.2,1) both}
+.intro-welcome{margin-top:27px;animation:intro-rise .9s .15s both}
+.intro-kicker{display:inline-block;color:#D8BD83;font-size:12px;letter-spacing:.5px;margin-bottom:13px}
+.intro-welcome h1{font-family:var(--font-display);font-size:clamp(30px,6vw,52px);line-height:1.55;margin:0;font-weight:700}
+.intro-welcome h1 em{font-style:normal;color:#D7B66F}
+.intro-welcome p{font-size:clamp(13px,2.5vw,17px);color:#C5D7D4;margin:9px 0 0}
+.intro-line{display:block;width:0;height:2px;margin:23px auto 0;background:linear-gradient(90deg,transparent,#B78F49,transparent);animation:intro-line-grow 1s .7s forwards}
+.intro-credit{position:absolute;top:50%;left:50%;width:100%;transform:translate(-50%,-42%);display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;opacity:0;visibility:hidden;font-family:var(--font-ui);direction:ltr}
+.intro-credit span{font-size:clamp(14px,3vw,20px);letter-spacing:2px;color:#D5E3DF}
+.intro-credit strong{font-size:clamp(25px,5vw,42px);color:#D7B66F;letter-spacing:.5px}
+.intro-credit small{flex-basis:100%;font-size:14px;color:#C5D7D4;letter-spacing:1px}
+.intro-credit.intro-show{visibility:visible;animation:intro-credit-in .55s ease forwards}
+.intro-welcome.intro-hide{animation:intro-welcome-out .45s ease forwards}
+.intro-glow{position:absolute;width:min(65vw,520px);aspect-ratio:1;border-radius:50%;filter:blur(65px);opacity:.15;pointer-events:none}
+.intro-glow-one{background:#0C6C78;top:-25%;right:-15%}.intro-glow-two{background:#B08B44;bottom:-35%;left:-15%;opacity:.09}
+.intro-skip{position:absolute;z-index:2;bottom:max(28px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);border:1px solid #F5EDE255;background:#03252F88;color:#F5EDE2;border-radius:30px;padding:9px 19px;font:inherit;font-size:11px;cursor:pointer;backdrop-filter:blur(8px)}
+.intro-skip:hover{border-color:#B78F49;color:#D7B66F}
+.intro-screen.intro-exit{opacity:0;visibility:hidden;pointer-events:none}
+@keyframes intro-logo-in{from{opacity:0;transform:translateY(15px) scale(.8)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes intro-rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes intro-line-grow{to{width:150px}}
+@keyframes intro-welcome-out{to{opacity:0;transform:translateY(-16px);visibility:hidden}}
+@keyframes intro-credit-in{from{opacity:0;transform:translate(-50%,-30%)}to{opacity:1;transform:translate(-50%,-50%)}}
+@media(prefers-reduced-motion:reduce){.intro-screen,.intro-logo,.intro-welcome,.intro-credit,.intro-line{animation:none!important;transition:none!important}.intro-line{width:150px}}
+
+/* QR booth visits and dynamic booth achievements */
+.qr-panel{max-width:440px;text-align:center}
+.qr-image-wrap{display:grid;place-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin:16px auto;max-width:290px}
+.qr-image-wrap img{display:block;width:100%;max-width:260px;height:auto;image-rendering:pixelated}
+.qr-open{display:block;text-decoration:none;border-radius:8px;padding:12px;margin:10px 0}
+.checkin-mark{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;margin:18px auto 10px;background:#e2eee6;color:#08734f;font-size:34px;font-weight:800}
+.checkin-booth-name{font-size:22px;color:var(--ink);margin:8px 0}
+#booth-checkin-modal .modal-panel{text-align:right}
+#booth-checkin-modal .modal-head{ text-align:right}
+#booth-checkin-modal .primary{border:0;border-radius:8px;padding:12px;cursor:pointer}
+#booth-checkin-submit:disabled{opacity:.65;cursor:wait}
+.admin-booth-row .row-actions{flex-wrap:wrap}
+@media(max-width:430px){.admin-booth-row{align-items:flex-start}.admin-booth-row .row-actions{justify-content:flex-end}}

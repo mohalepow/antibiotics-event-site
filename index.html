@@ -5,18 +5,28 @@
 <meta name="theme-color" content="#03252F"><meta name="description" content="الدليل التفاعلي لفعالية التوعية بالمضادات الحيوية">
 <title>دليل فعالية المضادات الحيوية</title><link rel="preload" href="assets/fonts/NotoSansArabic-Regular.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="assets/fonts/Amiri-Bold.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="intro-lock">
+<div class="intro-screen" id="intro-screen" role="dialog" aria-modal="true" aria-label="ترحيب بفعالية نادي يقن" aria-live="polite">
+ <div class="intro-glow intro-glow-one"></div><div class="intro-glow intro-glow-two"></div>
+ <div class="intro-content">
+  <img class="intro-logo" src="assets/images/site-logo.png" alt="شعار دليل الفعالية">
+  <div class="intro-welcome" id="intro-welcome">
+   <span class="intro-kicker">كلية الصيدلة · جامعة أم القرى</span>
+   <h1>أهلًا بكم في فعالية<br><em>نادي يقن</em></h1>
+   <p>للتوعية بالمضادات الحيوية</p>
+   <span class="intro-line"></span>
+  </div>
+  <div class="intro-credit" id="intro-credit" aria-hidden="true">
+   <span>MADE BY</span><strong>Dr.GHOST</strong><small>X : @dr0ghost</small>
+  </div>
+ </div>
+ <button class="intro-skip" id="intro-skip" type="button">تخطي المقدمة</button>
+</div>
 <div class="top-credit" aria-label="حقوق تصميم وتطوير الموقع">
  <span>MADE BY <b>Dr.GHOST</b> | X : <a href="https://x.com/dr0ghost" target="_blank" rel="noopener noreferrer">@dr0ghost</a></span>
 </div>
 <header class="topbar">
- <a class="brand" href="#">
-    <img class="brand-logo" src="IMG_3362.jpg" alt="شعار الفعالية">
-    <span>
-        <b>دليل الفعالية</b>
-        <small>التوعية بالمضادات الحيوية</small>
-    </span>
-</a>
+ <a class="brand" href="#"><img class="brand-logo" src="assets/images/site-logo.png" alt="شعار الفعالية"><span><b>دليل الفعالية</b><small>التوعية بالمضادات الحيوية</small></span></a>
  <nav><a href="#map">الخريطة</a><a href="#game">اللعبة</a><a href="#quiz">الاختبار</a><a href="#achievements">إنجازاتي</a><a href="#booths">البوثات</a><button id="admin-open" class="outline-btn">لوحة التحكم</button></nav>
 </header>
 <main>
@@ -105,7 +115,12 @@
   <div class="admin-toolbar"><span id="admin-email"></span><button id="logout-btn" class="text-btn">تسجيل الخروج</button></div>
   <section class="admin-block"><h3>صورة مخطط الفعالية</h3><p class="muted">ارفع صورة واضحة للمكان. يفضّل أن تكون أفقية.</p><input id="map-upload" type="file" accept="image/png,image/jpeg,image/webp"><button id="upload-map" class="secondary full">رفع صورة المخطط</button><p id="map-status" class="hint"></p></section>
   <section class="admin-block"><div class="admin-section-title"><h3>إدارة البوثات</h3><span class="hint">حتى ٥ بوثات</span></div><div id="admin-booths"></div></section>
-  <section id="booth-editor" class="admin-block hidden"><h3 id="editor-title">إضافة بوث</h3><p class="hint">اضغط على موقع البوث في الخريطة لتحديد مكان العلامة، ثم احفظ البيانات.</p>
+  <section id="booth-editor" class="admin-block hidden"><h3 id="editor-title">إضافة بوث</h3><p class="hint">حرّك العلامة مباشرة على معاينة المخطط لتحديد مكان البوث قبل الحفظ.</p>
+   <div class="booth-live-preview" id="booth-live-preview" aria-label="معاينة تفاعلية لموقع البوث">
+    <img id="booth-preview-image" src="assets/floor-plan-placeholder.svg" alt="معاينة مخطط الفعالية">
+    <div class="booth-preview-marker" id="booth-preview-marker">●</div>
+    <span class="preview-hint">اسحب العلامة إلى الموقع المطلوب</span>
+   </div>
    <input id="edit-id" type="hidden"><label>اسم البوث<input id="edit-name" maxlength="80" placeholder="مثال: مقاومة المضادات الحيوية"></label>
    <label>التصنيف<input id="edit-category" maxlength="50" placeholder="مثال: توعية دوائية"></label>
    <label>نبذة عن البوث<textarea id="edit-description" rows="3" maxlength="500" placeholder="اكتب نبذة مختصرة وواضحة..."></textarea></label>
@@ -117,6 +132,44 @@
  </div>
  </div>
 </div>
+
+<div id="booth-qr-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="booth-qr-title">
+ <div class="modal-panel qr-panel">
+  <div class="modal-head"><div><span class="eyebrow">رمز زيارة البوث</span><h2 id="booth-qr-title">QR Code</h2></div><button id="booth-qr-close" class="close" type="button" aria-label="إغلاق">×</button></div>
+  <p id="booth-qr-caption" class="muted">امسح الرمز لفتح صفحة تسجيل زيارة البوث.</p>
+  <div class="qr-image-wrap"><img id="booth-qr-image" alt="رمز QR للبوث"></div>
+  <a id="booth-qr-open" class="primary qr-open" target="_blank" rel="noopener noreferrer">فتح رابط الزيارة</a>
+  <p class="hint">اطبع هذا الرمز وضعه عند البوث. عند مسحه، يختار الزائر اسمه ثم تُسجّل الزيارة وتُفتح شارة البوث في إنجازاته.</p>
+ </div>
+</div>
+<div id="booth-checkin-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="booth-checkin-title">
+ <div class="modal-panel qr-panel">
+  <div class="modal-head"><div><span class="eyebrow">تسجيل زيارة</span><h2 id="booth-checkin-title">أهلًا بك!</h2></div><button id="booth-checkin-close" class="close" type="button" aria-label="إغلاق">×</button></div>
+  <div class="checkin-mark">✓</div>
+  <h3 id="booth-checkin-name" class="checkin-booth-name"></h3>
+  <p class="muted">أدخل الاسم نفسه الذي تستخدمه في ملف إنجازاتك حتى تُضاف الزيارة إلى شاراتك.</p>
+  <label for="booth-checkin-player">اسمك في الفعالية<input id="booth-checkin-player" maxlength="18" autocomplete="nickname" placeholder="اكتب اسمك"></label>
+  <button id="booth-checkin-submit" class="primary full" type="button">تأكيد زيارتي</button>
+  <p id="booth-checkin-status" class="hint" role="status"></p>
+ </div>
+</div>
+
 <div id="toast" class="toast" role="status"></div>
+<script>
+(()=>{
+ const screen=document.getElementById('intro-screen');
+ const welcome=document.getElementById('intro-welcome');
+ const credit=document.getElementById('intro-credit');
+ const skip=document.getElementById('intro-skip');
+ if(!screen||!welcome||!credit)return;
+ let finished=false;
+ const finish=()=>{if(finished)return;finished=true;screen.classList.add('intro-exit');document.body.classList.remove('intro-lock');window.setTimeout(()=>screen.remove(),750)};
+ const showCredit=()=>{if(finished)return;welcome.classList.add('intro-hide');credit.classList.add('intro-show');credit.setAttribute('aria-hidden','false');window.setTimeout(finish,1450)};
+ const first=window.setTimeout(showCredit,2700);
+ const skipNow=()=>{window.clearTimeout(first);finish()};
+ skip?.addEventListener('click',skipNow);
+ if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)window.setTimeout(finish,1200);
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="app.js"></script>
 </body></html>

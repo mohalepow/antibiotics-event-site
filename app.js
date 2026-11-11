@@ -36,6 +36,7 @@ async function loadData() {
   booths = boothData || [];
   setMap(settingData?.value || null);
   renderAll();
+  window.dispatchEvent(new CustomEvent("event-booths-loaded"));
 }
 
 function renderAll() {
@@ -263,11 +264,30 @@ function renderAdminBooths(){
     const row=document.createElement("div");row.className="admin-booth-row";
     const name=document.createElement("span");name.textContent=`${ar(b.booth_number)}. ${b.name}`;
     const actions=document.createElement("div");actions.className="row-actions";
+    const qr=document.createElement("button");qr.className="small-btn";qr.textContent="QR";qr.type="button";qr.onclick=()=>openBoothQr(b);
     const edit=document.createElement("button");edit.className="small-btn";edit.textContent="تعديل";edit.onclick=()=>openEditor(b);
     const del=document.createElement("button");del.className="small-btn danger";del.textContent="حذف";del.onclick=()=>deleteBooth(b.id);
-    actions.append(edit,del);row.append(name,actions);root.append(row);
+    actions.append(qr,edit,del);row.append(name,actions);
   });
 }
+function getBoothVisitUrl(boothId){
+  const url=new URL(window.location.href);
+  url.searchParams.set("booth",String(boothId));
+  url.hash="";
+  return url.toString();
+}
+function openBoothQr(booth){
+  const visitUrl=getBoothVisitUrl(booth.id);
+  $("booth-qr-title").textContent=`QR · ${booth.name}`;
+  $("booth-qr-caption").textContent=`رمز تسجيل زيارة: ${booth.name}`;
+  $("booth-qr-image").src=`https://api.qrserver.com/v1/create-qr-code/?size=360x360&margin=16&data=${encodeURIComponent(visitUrl)}`;
+  $("booth-qr-open").href=visitUrl;
+  $("booth-qr-open").textContent="فتح رابط الزيارة";
+  $("booth-qr-modal").classList.remove("hidden");
+}
+$("booth-qr-close")?.addEventListener("click",()=>$("booth-qr-modal").classList.add("hidden"));
+$("booth-qr-modal")?.addEventListener("click",e=>{if(e.target===$("booth-qr-modal"))$("booth-qr-modal").classList.add("hidden");});
+
 function openEditor(b=null){
   if(!b && booths.length>=5){toast("وصلت للحد الأعلى: ٥ بوثات");return;}
   editing=Boolean(b);$("booth-editor").classList.remove("hidden");
@@ -275,21 +295,47 @@ function openEditor(b=null){
   $("edit-id").value=b?.id||"";
   $("edit-name").value=b?.name||"";$("edit-category").value=b?.category||"";
   $("edit-description").value=b?.description||"";$("edit-location").value=b?.location||"";
-  $("edit-x").value=b?.x??50;$("edit-y").value=b?.y??50;updateCoords();
+  $("edit-x").value=b?.x??50;$("edit-y").value=b?.y??50;syncBoothPreviewImage();updateCoords();
   $("save-status").textContent="اضغط على الخريطة لتحديد موقع البوث أو حرّك المؤشرات.";
   $("booth-editor").scrollIntoView({behavior:"smooth",block:"nearest"});
 }
-function updateCoords(){$("x-value").textContent=$("edit-x").value+"%";$("y-value").textContent=$("edit-y").value+"%";}
+function updateCoords(){
+  $("x-value").textContent=$("edit-x").value+"%";
+  $("y-value").textContent=$("edit-y").value+"%";
+  updateBoothPreviewMarker();
+}
+function updateBoothPreviewMarker(){
+  const marker=$("booth-preview-marker");
+  if(!marker)return;
+  marker.style.left=Number($("edit-x").value)+"%";
+  marker.style.top=Number($("edit-y").value)+"%";
+}
+function syncBoothPreviewImage(){
+  const source=$("floorplan");
+  const preview=$("booth-preview-image");
+  if(source&&preview)preview.src=source.src;
+}
+function moveBoothPreview(clientX,clientY){
+  const preview=$("booth-live-preview");
+  const rect=preview.getBoundingClientRect();
+  const x=Math.max(1,Math.min(99,Math.round((clientX-rect.left)/rect.width*100)));
+  const y=Math.max(1,Math.min(99,Math.round((clientY-rect.top)/rect.height*100)));
+  $("edit-x").value=x;$("edit-y").value=y;updateCoords();
+}
+let boothPreviewDragging=false;
+$("booth-live-preview")?.addEventListener("pointerdown",e=>{
+  boothPreviewDragging=true;
+  e.currentTarget.setPointerCapture(e.pointerId);
+  moveBoothPreview(e.clientX,e.clientY);
+});
+$("booth-live-preview")?.addEventListener("pointermove",e=>{
+  if(boothPreviewDragging)moveBoothPreview(e.clientX,e.clientY);
+});
+$("booth-live-preview")?.addEventListener("pointerup",()=>{boothPreviewDragging=false;});
+$("booth-live-preview")?.addEventListener("pointercancel",()=>{boothPreviewDragging=false;});
 $("edit-x").addEventListener("input",updateCoords);$("edit-y").addEventListener("input",updateCoords);
 $("cancel-edit").addEventListener("click",()=>$("booth-editor").classList.add("hidden"));
-$("map-canvas").addEventListener("click",e=>{
-  if($("admin-view").classList.contains("hidden")||$("booth-editor").classList.contains("hidden"))return;
-  if(e.target.closest(".pin"))return;
-  const rect=e.currentTarget.getBoundingClientRect();
-  const x=Math.max(1,Math.min(99,Math.round((e.clientX-rect.left)/rect.width*100)));
-  const y=Math.max(1,Math.min(99,Math.round((e.clientY-rect.top)/rect.height*100)));
-  $("edit-x").value=x;$("edit-y").value=y;updateCoords();toast("تم تحديد موقع البوث على الخريطة");
-});
+
 $("save-booth").addEventListener("click",async()=>{
   if(!supabaseClient)return;
   const name=$("edit-name").value.trim();
@@ -372,6 +418,13 @@ start();
  let player={x:width*.27,y:height*.48,vy:0};
  let obstacles=[],frame=0,lastTime=0,obstacleTimer=0,submitPending=false,particles=[];
  let soundEnabled=true,audioContext=null,lastBump=0;
+ let currentRunId=null,scoreSubmitted=false;
+ function createRunId(){
+   if(window.crypto?.randomUUID)return window.crypto.randomUUID();
+   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,c=>{
+     const r=Math.random()*16|0;return (c==="x"?r:(r&3|8)).toString(16);
+   });
+ }
  const BASE_GRAVITY=.34,BASE_LIFT=-6.2,BASE_GAP=154,BASE_SPEED=2.7,OBSTACLE_WIDTH=54;
  function difficulty(){
    const tier=Math.floor(score/10);
@@ -455,6 +508,8 @@ start();
  }
  function reset(){
    score=0;frame=0;obstacleTimer=0;obstacles=[];particles=[];player={x:Math.max(75,width*.27),y:height*.48,vy:0};
+   currentRunId=createRunId();scoreSubmitted=false;
+   $("submit-score").disabled=false;$("score-status").textContent="";
    $("game-score").textContent=scoreText(0);$("game-submit").classList.add("hidden");updateDifficultyUI();
    ended=false;submitPending=false;
  }
@@ -554,14 +609,21 @@ start();
    if(!name){root.innerHTML='<p class="leader-empty">احفظ اسمك لعرض إنجازاتك ومتابعة مجموع نقاطك.</p>';$("stat-total").textContent=ar(0);$("stat-games").textContent=ar(0);$("stat-quizzes").textContent=ar(0);return;}
    if(!supabaseClient){root.innerHTML='<p class="leader-empty">اربط Supabase ثم نفّذ ملف تحديث قاعدة البيانات لتفعيل حفظ الإنجازات.</p>';return;}
    const key=name.toLocaleLowerCase();
-   const [statsResult,badgesResult]=await Promise.all([
+   const [statsResult,badgesResult,boothVisitsResult]=await Promise.all([
      supabaseClient.from("event_leaderboard").select("total_score,game_points,quiz_points,games_played,quizzes_completed,perfect_quizzes").eq("player_key",key).maybeSingle(),
-     supabaseClient.from("player_achievements").select("badge_id,earned_at").eq("player_key",key)
+     supabaseClient.from("player_achievements").select("badge_id,earned_at").eq("player_key",key),
+     supabaseClient.rpc("get_visited_booths",{p_player_name:name})
    ]);
-   if(statsResult.error||badgesResult.error){console.error(statsResult.error||badgesResult.error);root.innerHTML='<p class="leader-empty">تعذر تحميل الإنجازات. تأكد من تشغيل ملف SQL الجديد.</p>';return;}
+   if(statsResult.error||badgesResult.error||boothVisitsResult.error){console.error(statsResult.error||badgesResult.error||boothVisitsResult.error);root.innerHTML='<p class="leader-empty">تعذر تحميل الإنجازات. تأكد من تشغيل ملفات SQL المطلوبة.</p>';return;}
    const stats=statsResult.data||{total_score:0,game_points:0,quiz_points:0,games_played:0,quizzes_completed:0,perfect_quizzes:0};
    $("stat-total").textContent=ar(stats.total_score||0);$("stat-games").textContent=ar(stats.games_played||0);$("stat-quizzes").textContent=ar(stats.quizzes_completed||0);
    const earned=new Map((badgesResult.data||[]).map(b=>[b.badge_id,b.earned_at]));root.innerHTML="";
+   const boothVisits=new Map((boothVisitsResult.data||[]).map(item=>[String(item.booth_id),item.visited_at]));
+   const allBadges=[...BADGES,...booths.map(booth=>({
+     id:`booth:${booth.id}`,icon:"📍",title:booth.name,
+     description:`زر بوث «${booth.name}» وامسح رمز QR الخاص به لفتح هذا الإنجاز.`,
+     earnedAt:boothVisits.get(String(booth.id))||null
+   }))];
    BADGES.forEach(badge=>{
      const earnedAt=earned.get(badge.id);const card=document.createElement("article");card.className=`achievement-badge${earnedAt?" earned":" locked"}`;
      const icon=document.createElement("span");icon.className="badge-icon";icon.textContent=badge.icon;
@@ -572,7 +634,44 @@ start();
      else status.textContent="🔒 لم تُفتح بعد";
      card.append(icon,title,desc,status);root.append(card);
    });
+   allBadges.filter(badge=>badge.id.startsWith("booth:")).forEach(badge=>{
+     const card=document.createElement("article");card.className=`achievement-badge${badge.earnedAt?" earned":" locked"}`;
+     const icon=document.createElement("span");icon.className="badge-icon";icon.textContent=badge.icon;
+     const title=document.createElement("b");title.textContent=badge.title;
+     const desc=document.createElement("p");desc.textContent=badge.description;
+     const status=document.createElement("small");status.className="badge-status";
+     status.textContent=badge.earnedAt?"تمت الزيارة · "+new Intl.DateTimeFormat("ar-SA",{dateStyle:"medium"}).format(new Date(badge.earnedAt)):"🔒 لم تتم الزيارة بعد";
+     card.append(icon,title,desc,status);root.append(card);
+   });
  }
+ let pendingQrBooth = null;
+ async function openBoothCheckin(){
+   const boothId=new URLSearchParams(window.location.search).get("booth");
+   if(!boothId || !supabaseClient)return;
+   const booth=booths.find(item=>String(item.id)===String(boothId));
+   if(!booth){$("booth-checkin-status").textContent="تعذر العثور على هذا البوث. تأكد من أن رمز QR ما زال صالحًا.";return;}
+   pendingQrBooth=booth;
+   $("booth-checkin-name").textContent=booth.name;
+   $("booth-checkin-player").value=getPlayerName()||savedPlayerName;
+   $("booth-checkin-status").textContent="";
+   $("booth-checkin-modal").classList.remove("hidden");
+ }
+ window.addEventListener("event-booths-loaded",openBoothCheckin);
+ $("booth-checkin-close")?.addEventListener("click",()=>$("booth-checkin-modal").classList.add("hidden"));
+ $("booth-checkin-modal")?.addEventListener("click",e=>{if(e.target===$("booth-checkin-modal"))$("booth-checkin-modal").classList.add("hidden");});
+ $("booth-checkin-submit")?.addEventListener("click",async()=>{
+   if(!pendingQrBooth)return;
+   const name=$("booth-checkin-player").value.trim();
+   if(name.length<2||name.length>18){$("booth-checkin-status").textContent="اكتب اسمًا من حرفين إلى ١٨ حرفًا.";return;}
+   const button=$("booth-checkin-submit");button.disabled=true;$("booth-checkin-status").textContent="جارٍ تسجيل زيارتك...";
+   const {data,error}=await supabaseClient.rpc("record_booth_visit",{p_booth_id:String(pendingQrBooth.id),p_player_name:name});
+   button.disabled=false;
+   if(error){console.error("Booth visit:",error);$("booth-checkin-status").textContent="تعذر تسجيل الزيارة. نفّذ ملف supabase-upgrade-booth-visits.sql أولًا.";return;}
+   rememberPlayerName(name);
+   $("booth-checkin-status").textContent=data?.already_visited?"هذه الزيارة مسجلة مسبقًا، وشارة البوث موجودة في إنجازاتك.":"تم تسجيل زيارتك بنجاح! أُضيف إنجاز هذا البوث إلى ملفك.";
+   $("booth-checkin-submit").textContent=data?.already_visited?"تم تسجيل الزيارة":"تمت الزيارة ✓";
+   await loadPlayerDashboard();
+ });
  $("save-profile")?.addEventListener("click",async()=>{
    const name=$("profile-name").value.trim();
    if(name.length<2||name.length>18){$("profile-status").textContent="اكتب اسمًا من حرفين إلى ١٨ حرفًا.";return;}
@@ -635,12 +734,29 @@ start();
    if(score<1){$("score-status").textContent="حاول تجمع نقطة واحدة على الأقل قبل التسجيل.";return;}
    const name=($("player-name").value||getPlayerName()).trim();
    if(name.length<2||name.length>18){$("score-status").textContent="اكتب اسمًا من حرفين إلى ١٨ حرفًا، أو احفظه في قسم إنجازاتي.";$("profile-name")?.focus();return;}
-   if(submitPending)return;submitPending=true;$("submit-score").disabled=true;$("score-status").textContent="جارٍ تسجيل النتيجة...";
-   const {error}=await supabaseClient.rpc("submit_game_score",{p_name:name,p_score:score});
-   submitPending=false;$("submit-score").disabled=false;
-   if(error){console.error(error);$("score-status").textContent="تعذر تسجيل النتيجة. نفّذ ملف supabase-upgrade-achievements.sql أولًا.";return;}
-   rememberPlayerName(name);
-   $("score-status").textContent="تمت إضافة نقاط اللعبة إلى مجموعك، وتحديث إنجازاتك!";
+   if(!ended){$("score-status").textContent="يمكن تسجيل النتيجة بعد انتهاء الجولة فقط.";return;}
+   if(scoreSubmitted){$("score-status").textContent="تم تسجيل نتيجة هذه الجولة مسبقًا. ابدأ جولة جديدة لتسجيل نتيجة أخرى.";return;}
+   if(!currentRunId){$("score-status").textContent="تعذر التحقق من الجولة. ابدأ جولة جديدة.";return;}
+   if(submitPending)return;
+   submitPending=true;$("submit-score").disabled=true;$("score-status").textContent="جارٍ تسجيل النتيجة...";
+   const {data,error}=await supabaseClient.rpc("submit_game_score_once",{
+     p_run_id:currentRunId,p_name:name,p_score:score
+   });
+   submitPending=false;
+   if(error){
+     console.error(error);$("submit-score").disabled=false;
+     $("score-status").textContent="تعذر تسجيل النتيجة. شغّل ملف supabase-upgrade-score-once.sql في Supabase ثم حاول مجددًا.";
+     return;
+   }
+   if(data?.already_submitted){
+     scoreSubmitted=true;
+     $("score-status").textContent="هذه الجولة مسجلة مسبقًا ولا يمكن إضافة نقاطها مرة أخرى.";
+   }else{
+     scoreSubmitted=true;
+     rememberPlayerName(name);
+     $("score-status").textContent="تم تسجيل نتيجة هذه الجولة بنجاح! لا يمكن تكرار إضافتها.";
+   }
+   $("submit-score").disabled=true;
    await Promise.all([loadLeaders(),loadPlayerDashboard()]);
  });
  loadLeaders();
